@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+  "os"
 )
 
 // DownloadCount represents the download count for each file category
@@ -80,50 +81,47 @@ func writeDownloadCountsToJSON(filename string) {
 // DownloadFileHandler handles the /download endpoint
 func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the filename from the URL query parameter
-	file := r.URL.Query().Get("file")
+	filePath := r.URL.Query().Get("file")
 
-	// Root directory containing PDF and EXE directories
-	rootDir := "files_download"
-
-	// Construct the full file path
-	filePath := filepath.Join(rootDir, file)
-
-	// Generate a random filename with the current date and extension
-	randomFilename := generateRandomFilename(file)
-
-	// Set the Content-Disposition header to specify the filename for the browser
-	w.Header().Set("Content-Disposition", "attachment; filename="+randomFilename)
-
-	// Serve the file for download with the random filename
-	http.ServeFile(w, r, filePath)
-
-	// Get file extension and category
-	ext := filepath.Ext(file)
-	category := getCategory(ext)
-
-	// Lock the category mutex
-	categoryMutex, ok := getCategoryMutex(category)
-	if !ok {
-		fmt.Printf("Error: Category mutex not found for %s\n", category)
+	// Detect the Linux distribution
+	distro, err := getDistro()
+	if err != nil {
+		http.Error(w, "Error detecting distro", http.StatusInternalServerError)
 		return
 	}
-	categoryMutex.Lock()
-	defer categoryMutex.Unlock()
 
-	// Initialize category if it doesn't exist
-	if _, ok := downloadCount.Counts[category]; !ok {
-		downloadCount.Counts[category] = make(map[string]int)
+	// Determine the root directory based on the detected distribution
+	var rootDir string
+	switch distro {
+	case "ubuntu":
+		rootDir = "/var/www/html" 
+	case "arch":
+		rootDir = "/usr/share/nginx/html" 
+	default:
+		http.Error(w, "Unsupported distro", http.StatusInternalServerError)
+		return
 	}
 
-	// Increment the download count for the file
-	downloadCount.Counts[category][file]++
+	// Construct the full file path relative to the root directory
+	fullFilePath := filepath.Join(rootDir, filePath)
 
-	// Log the download with the random filename and download count
-	fmt.Printf("File '%s' downloaded as '%s'. Total downloads: %d\n", file, randomFilename, downloadCount.Counts[category][file])
+	// Log the full file path
+	fmt.Printf("Attempting to serve file: %s\n", fullFilePath)
 
-	// Write download counts to JSON file
-	writeDownloadCountsToJSON("download_counts.json")
+	// Check if the file exists
+	if _, err := os.Stat(fullFilePath); err != nil {
+		// If the file doesn't exist, return a 404 Not Found error
+		http.NotFound(w, r)
+		return
+	}
+
+	// Set the Content-Disposition header to specify the filename for the browser
+	w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(fullFilePath))
+
+	// Serve the file for download
+	http.ServeFile(w, r, fullFilePath)
 }
+
 
 // generateRandomFilename generates a random filename with the current date and the same extension as the original file
 func generateRandomFilename(originalFilename string) string {
@@ -182,6 +180,8 @@ func getCategory(ext string) string {
                 return "EXE"
             case ".jpg":
                 return "JPG"
+            case ".png":
+                return "PNG"
             }
         }
     }

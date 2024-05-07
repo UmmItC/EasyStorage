@@ -54,7 +54,7 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
         // Check if the file extension is allowed
         if allowedExtensions[ext] {
             // Add file path to the map
-            fileMap[ext] = append(fileMap[ext], filepath.Join("/", strings.TrimPrefix(path, rootDir)))
+            fileMap[ext] = append(fileMap[ext], strings.TrimPrefix(path, rootDir))
         }
 
         return nil
@@ -81,8 +81,9 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
             filename := strings.ReplaceAll(filepath.Base(file), "<", "&lt;")
             filename = strings.ReplaceAll(filename, ">", "&gt;")
             // Write the HTML list item with download link
-            fmt.Fprintf(w, `<li><a href="/download?file=%s" download>%s</a></li>`, file, filename)
+            fmt.Fprintf(w, `<li><a href="/download?file=%s" download>%s</a></li>`, filepath.Join("/", strings.TrimPrefix(file, rootDir)), filename)
         }
         fmt.Fprintf(w, "</ul>")
     }
 }
+
