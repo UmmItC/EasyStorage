@@ -1,17 +1,49 @@
 package utilities
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
-  "time"
+	"time"
 )
+
+// GenerateRandomFilename generates a random filename with the same extension as the original file
+func GenerateRandomFilename(originalFilename string) (string, error) {
+	// Generate random bytes
+	randomBytes := make([]byte, 8)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert random bytes to hex
+	randomHex := hex.EncodeToString(randomBytes)
+
+	// Get the extension of the original filename
+	ext := filepath.Ext(originalFilename)
+
+	// Construct filename with random hex and original extension
+	filename := fmt.Sprintf("%s%s", randomHex, ext)
+	return filename, nil
+}
 
 // DownloadFileHandler handles the /download endpoint
 func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the filename from the URL query parameter
 	file := r.URL.Query().Get("file")
+
+	// Generate random output filename with the same extension as the original file
+	randomFilename, err := GenerateRandomFilename(file)
+	if err != nil {
+		http.Error(w, "Error generating random filename", http.StatusInternalServerError)
+		return
+	}
+
+	// Set the Content-Disposition header to specify the filename for the browser
+	w.Header().Set("Content-Disposition", "attachment; filename="+randomFilename)
 
 	// Detect the Linux distribution
 	distro, err := getDistro()
@@ -53,11 +85,6 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	// Set the Content-Disposition header to specify the filename for the browser
-	filename := filepath.Base(file)
-	w.Header().Set("Content-Disposition", "attachment; filename="+filename)
-
 	// Serve the file for download
-	http.ServeContent(w, r, filename, time.Now(), f)
+	http.ServeContent(w, r, randomFilename, time.Now(), f)
 }
-
