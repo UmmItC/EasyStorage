@@ -7,6 +7,7 @@ import (
     "strings"
     "path/filepath"
     "io/ioutil"
+    "sort"
 )
 
 // FileListHandler handles the /list endpoint
@@ -65,11 +66,18 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    // Sort file extensions alphabetically
+    sortedExts := make([]string, 0, len(fileMap))
+    for ext := range fileMap {
+        sortedExts = append(sortedExts, ext)
+    }
+    sort.Strings(sortedExts)
+
     // Write the list of files by extension
-    for ext, files := range fileMap {
+    for _, ext := range sortedExts {
         fmt.Fprintf(w, "<h2>%s Files:</h2>", strings.ToUpper(strings.TrimLeft(ext, ".")))
         fmt.Fprintf(w, "<ul>")
-        for _, file := range files {
+        for _, file := range fileMap[ext] {
             // Escape special characters in filenames to prevent XSS
             filename := strings.ReplaceAll(filepath.Base(file), "<", "&lt;")
             filename = strings.ReplaceAll(filename, ">", "&gt;")
