@@ -11,18 +11,21 @@ import (
 
 // FileListHandler handles the /list endpoint
 func FileListHandler(w http.ResponseWriter, r *http.Request) {
-    // Root directory containing files
-    var rootDir string
+    // Detect the Linux distribution
     distro, err := getDistro()
     if err != nil {
         http.Error(w, "Error detecting distro", http.StatusInternalServerError)
         return
     }
-    if distro == "ubuntu" {
-        rootDir = "/var/www/html"
-    } else if distro == "arch" {
-        rootDir = "/usr/share/nginx/html"
-    } else {
+
+    // Determine the root directory based on the detected distribution
+    var rootDir string
+    switch distro {
+    case "ubuntu":
+        rootDir = "/var/www/html" // Example path for Ubuntu
+    case "arch":
+        rootDir = "/usr/share/nginx/html" // Example path for Arch Linux
+    default:
         http.Error(w, "Unsupported distro", http.StatusInternalServerError)
         return
     }
@@ -54,7 +57,7 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
         // Check if the file extension is allowed
         if allowedExtensions[ext] {
             // Add file path to the map
-            fileMap[ext] = append(fileMap[ext], strings.TrimPrefix(path, rootDir))
+            fileMap[ext] = append(fileMap[ext], filepath.Join("/", strings.TrimPrefix(path, rootDir)))
         }
 
         return nil
@@ -81,7 +84,7 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
             filename := strings.ReplaceAll(filepath.Base(file), "<", "&lt;")
             filename = strings.ReplaceAll(filename, ">", "&gt;")
             // Write the HTML list item with download link
-            fmt.Fprintf(w, `<li><a href="/download?file=%s" download>%s</a></li>`, filepath.Join("/", strings.TrimPrefix(file, rootDir)), filename)
+            fmt.Fprintf(w, `<li><a href="/download?file=%s" download>%s</a></li>`, file, filename)
         }
         fmt.Fprintf(w, "</ul>")
     }
