@@ -56,7 +56,7 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	var rootDir string
 	switch distro {
 	case "ubuntu":
-		rootDir = "/var/www/html"
+		rootDir = "/var/www/ummit_storage"
 	case "arch":
 		rootDir = "/usr/share/nginx/html"
 	default:
@@ -68,7 +68,7 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join(rootDir, file)
 
 	// Log the file path
-	fmt.Printf("File path: %s\n", filePath)
+	fmt.Printf("Server file path: %s\n", filePath) // Printing server file path
 
 	// Check if the file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
@@ -88,3 +88,4 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Serve the file for download
 	http.ServeContent(w, r, randomFilename, time.Now(), f)
 }
+

@@ -22,7 +22,7 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
     var rootDir string
     switch distro {
     case "ubuntu":
-        rootDir = "/var/www/html" // Example path for Ubuntu
+        rootDir = "/var/www/ummit_storage" // Example path for Ubuntu
     case "arch":
         rootDir = "/usr/share/nginx/html" // Example path for Arch Linux
     default:
