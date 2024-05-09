@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// GenerateRandomFilename generates a random filename with the same extension as the original file
-func GenerateRandomFilename(originalFilename string) (string, error) {
+// GenerateRandomFilenameWithDate generates a random filename with the current date and the same extension as the original file
+func GenerateRandomFilenameWithDate(originalFilename string) (string, error) {
 	// Generate random bytes
 	randomBytes := make([]byte, 8)
 	_, err := rand.Read(randomBytes)
@@ -25,8 +25,11 @@ func GenerateRandomFilename(originalFilename string) (string, error) {
 	// Get the extension of the original filename
 	ext := filepath.Ext(originalFilename)
 
-	// Construct filename with random hex and original extension
-	filename := fmt.Sprintf("%s%s", randomHex, ext)
+	// Get current date in YYYYMMDD format
+	currentDate := time.Now().Format("20060102")
+
+	// Construct filename with random hex, current date, and original extension
+	filename := fmt.Sprintf("%s-%s%s", randomHex, currentDate, ext)
 	return filename, nil
 }
 
@@ -35,8 +38,8 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	// Get the filename from the URL query parameter
 	file := r.URL.Query().Get("file")
 
-	// Generate random output filename with the same extension as the original file
-	randomFilename, err := GenerateRandomFilename(file)
+	// Generate random output filename with the current date and the same extension as the original file
+	randomFilename, err := GenerateRandomFilenameWithDate(file)
 	if err != nil {
 		http.Error(w, "Error generating random filename", http.StatusInternalServerError)
 		return
