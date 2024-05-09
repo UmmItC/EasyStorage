@@ -7,6 +7,8 @@ import (
     "strings"
     "path/filepath"
     "sort"
+    "encoding/json"
+    "io/ioutil"
 )
 
 // FileListHandler handles the /list endpoint
@@ -30,11 +32,11 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Allowed extensions
-    allowedExtensions := map[string]bool{
-        ".jpg": true,
-        ".png": true,
-        ".exe": true,
+    // Read allowed extensions from JSON file
+    allowedExtensions, err := readAllowedExtensions("allowed_extensions.json")
+    if err != nil {
+        http.Error(w, "Error reading allowed extensions", http.StatusInternalServerError)
+        return
     }
 
     // Write the HTML header
@@ -90,3 +92,27 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+// Function to read allowed extensions from JSON file
+func readAllowedExtensions(filename string) (map[string]bool, error) {
+    var data map[string][]string
+
+    // Read JSON file
+    file, err := ioutil.ReadFile(filename)
+    if err != nil {
+        return nil, err
+    }
+
+    // Unmarshal JSON data
+    err = json.Unmarshal(file, &data)
+    if err != nil {
+        return nil, err
+    }
+
+    // Convert list of extensions to map for easy lookup
+    allowedExtensions := make(map[string]bool)
+    for _, ext := range data["allowed_extensions"] {
+        allowedExtensions[ext] = true
+    }
+
+    return allowedExtensions, nil
+}
