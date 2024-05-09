@@ -1,0 +1,12 @@
+[Unit]
+Description=EasyStorage
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5s
+WorkingDirectory=/path/to/your/EasyStorage/directory
+ExecStart=/path/to/EasyStorage/EasyStorage
+
+[Install]
+WantedBy=multi-user.target
