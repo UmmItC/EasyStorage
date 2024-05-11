@@ -23,6 +23,13 @@ func readDownloadCounts(filename string) (DownloadCounts, error) {
 		}
 		return nil, err
 	}
+
+	// Check if the file is empty
+	if len(data) == 0 {
+		// If the file is empty, return an empty DownloadCounts
+		return make(DownloadCounts), nil
+	}
+
 	var counts DownloadCounts
 	err = json.Unmarshal(data, &counts)
 	if err != nil {
@@ -30,6 +37,7 @@ func readDownloadCounts(filename string) (DownloadCounts, error) {
 	}
 	return counts, nil
 }
+
 
 func updateDownloadCounts(filename, fileType, file string) error {
 	counts, err := readDownloadCounts(filename)
