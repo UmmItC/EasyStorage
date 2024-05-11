@@ -3,12 +3,56 @@ package utilities
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"time"
 )
+
+type DownloadCounts map[string]map[string]int
+
+func readDownloadCounts(filename string) (DownloadCounts, error) {
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// If the file doesn't exist, return an empty DownloadCounts
+			return make(DownloadCounts), nil
+		}
+		return nil, err
+	}
+	var counts DownloadCounts
+	err = json.Unmarshal(data, &counts)
+	if err != nil {
+		return nil, err
+	}
+	return counts, nil
+}
+
+func updateDownloadCounts(filename, fileType, file string) error {
+	counts, err := readDownloadCounts(filename)
+	if err != nil {
+		return err
+	}
+	if counts == nil {
+		counts = make(DownloadCounts)
+	}
+	if counts[fileType] == nil {
+		counts[fileType] = make(map[string]int)
+	}
+	counts[fileType][file]++
+	data, err := json.MarshalIndent(counts, "", "    ")
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filename, data, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // GenerateRandomFilenameWithDate generates a random filename with the current date and the same extension as the original file
 func GenerateRandomFilenameWithDate(originalFilename string) (string, error) {
@@ -43,6 +87,14 @@ func DownloadFileHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error generating random filename", http.StatusInternalServerError)
 		return
+	}
+
+	// Increment download count for the file
+	ext := filepath.Ext(file)
+	fileType := ext[1:]
+	err = updateDownloadCounts("download_counts.json", fileType, file)
+	if err != nil {
+		fmt.Println("Error updating download count:", err)
 	}
 
 	// Set the Content-Disposition header to specify the filename for the browser
