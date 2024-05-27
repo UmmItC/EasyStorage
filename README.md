@@ -31,7 +31,7 @@ sudo apt install golang nginx
 Clone the EasyStorage repository:
 
 ```bash
-git clone <url>
+git clone https://codeberg.org/UmmIt/EasyStorage.git
 ```
 
 ### Configuration
@@ -163,4 +163,4 @@ Contributions to this project are welcome! If you have any ideas for improvement
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute the code for your own purposes.
+This project is licensed under the [MIT License](./LICENSE.md). Feel free to use, modify, and distribute the code for your own purposes.
